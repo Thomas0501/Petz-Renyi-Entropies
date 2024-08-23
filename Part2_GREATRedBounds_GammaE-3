@@ -1,0 +1,129 @@
+# Requires the function Renyi_SDP, which can be found in Part 1
+from Part1_GEAT_Opt_Entropy import Renyi_SDP
+import cvxpy as cp
+import numpy as np
+import math
+
+
+def Optimization_EAT_CHSH(beta1, beta2, gamma,W_obs,tol, A_config, B_config, NPA_Level, Nodes):
+    """
+    Returns additional monomials to add to sdp relaxation.
+    """
+
+    # Returns a List of variables, the objective function, constraints
+    # And a list that tells me which monomials correspond to which variables 
+    
+    [Var,obj,const,mons] = Renyi_SDP(beta1,A_config, B_config, NPA_Level, Nodes)
+
+    # Time to find monomials for CHSH game
+    
+    # S_W =  (2*A0*B0 + 3 - 2*A0 - 2*B0 + 2*A0*B1 + 2*A1*B0  - 2*A1*B1)/4
+    
+    j1 = -1
+    j2 = -1
+    j3 = -1
+    j4 = -1
+    j5 = -1
+    j6 = -1
+    l = 0
+    for i in mons:
+        if i == 'A0*B0':
+            j1 = l
+        if i == 'A0':
+            j2 = l
+        if i == 'B0':
+            j3 = l  
+        if i == 'A0*B1':
+            j4 = l
+        if i == 'A1*B0':
+            j5 = l
+        if i == 'A1*B1':
+            j6 = l
+        l += 1 
+    
+    # Additonal variables
+    vec1 = cp.Variable((3),nonneg=True) # p_acc / q
+    vec2 = cp.Variable((3),nonneg=True) # p
+
+
+    #const += [vec1 >= lb,vec1 <= ub]
+    const += [vec1 >= [gamma*W_obs-tol,gamma*(1-W_obs)-tol,1-gamma-tol]]
+    const += [vec1 <= [gamma*W_obs+tol,gamma*(1-W_obs)+tol,1-gamma+tol]]
+    const += [cp.sum(vec1) == 1]
+    
+    
+    # Cond on p
+    const += [vec2[0] == gamma*(2*Var[j1] + 3 - 2*Var[j2] - 2*Var[j3] + 2*Var[j4] + 2*Var[j5] - 2*Var[j6])/4]
+    const += [vec2[1] == gamma*(1-(2*Var[j1] + 3 - 2*Var[j2] - 2*Var[j3] + 2*Var[j4] + 2*Var[j5] - 2*Var[j6])/4)]
+    const += [vec2[2] == 1 - gamma]
+
+    
+    
+    c = math.sin(beta1*math.pi)/(math.pi)
+    
+    new_obj = -(1-gamma-tol)*(1/(beta1*np.log(2)))*cp.log(1 - c*obj) + (1/np.log(2))*(1/beta1)*(cp.sum(cp.rel_entr(vec1,vec2)))
+
+    min_obj = cp.Minimize(new_obj)
+    
+    # Constructing the Problem
+    prob = cp.Problem(min_obj, const)
+
+    # The optimal objective value is returned by `prob.solve()`.
+    result = prob.solve()
+    
+    
+    #print(result, vec1.value, vec2.value)
+
+
+
+    return result
+
+#n = 10**7
+#n = 3*10**7
+n = 10**8
+#n = 3*10**8
+#n = 10**9
+#n = 3*10**9
+#n = 10000000000
+
+#Optimal Delta-Alpha
+#delta_alpha = any
+#delta_alpha = any
+delta_alpha = 1.3464629731207318e-05
+#delta_alpha = 7.307524857217208e-06
+#delta_alpha = 3.820927333165405e-06
+#delta_alpha = 2.1503405015649424e-06
+#delta_alpha = 1.1577425096790005e-06
+
+#dtol = 0.0000510867343295993
+#dtol = 0.000029494939817213
+dtol = 0.0000161550438701449
+#dtol = 9.32711892719836*10**(-6)
+#dtol = 5.10867343295993*10**(-6)
+#dtol = 2.9494939817213*10**(-6)
+#dtol = 1.61550438701449*10**(-6)
+
+W_exp = 0.8
+gamma = 0.001
+P_Om = 10**(-5)
+Eps_s = 10**(-5)
+A_config = [2,2]
+B_config = [2,2]
+NPA_Level = 1
+Nodes = 6
+
+
+
+def fun(x):
+    Part_1 = Optimization_EAT_CHSH(x, x, gamma,W_exp, dtol,A_config, B_config, NPA_Level, Nodes)
+    Part_2 = ((1+ x)/(x*n*np.log(2)))*np.log(P_Om)
+    Part_3 = np.log(2/(Eps_s**2))/(x*n*np.log(2))
+    Rate = Part_1 + Part_2 - Part_3
+    return  Rate
+
+
+Rate = fun(delta_alpha)
+print(Rate)
+
+
+
