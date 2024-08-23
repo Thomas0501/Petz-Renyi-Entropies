@@ -85,6 +85,7 @@ n = 10**7
 #n = 3*10**9
 #n = 10000000000
 
+#Note: If Mosek fails, slightly varying Delta-Alpha usually does the trick
 # Optimal Delta-Alpha
 delta_alpha = 1.34393914e-04
 #delta_alpha = 7.32209619e-05
