@@ -171,7 +171,7 @@ import chaospy
 import qutip as qtp
 
 LEVEL = 5                          # NPA relaxation level
-M = 4                    # Number of nodes in gaussian quadrature
+M = 4                    # 2M: Number of nodes in gaussian quadrature
 alpha = 0.5          # Choose alpha for Petz-Renyi entropy
 T1, W1, T2, W2 = generate_quadrature(M,alpha)     # Set 1: Nodes, weights of quadrature
 VERBOSE = 2                        # If > 1 then ncpol2sdpa will also be verbose
